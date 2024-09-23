@@ -1,0 +1,55 @@
+﻿FUNCTION FC_Count : VOID
+VAR_INPUT
+    Start    : BOOL;   // Кнопка "Старт"
+    Stop     : BOOL;   // Кнопка "Стоп"
+    Reset    : BOOL;   // Кнопка "Сброс"
+    Pulse    : ARRAY[1..N] OF BOOL; // Входные импульсы для каждого счетчика
+    Min      : ARRAY[1..N] OF INT;  // Минимальное значение для каждого счетчика
+    Max      : ARRAY[1..N] OF INT;  // Максимальное значение для каждого счетчика
+END_VAR
+
+VAR_OUTPUT
+    Overflow : ARRAY[1..N] OF BOOL; // Выход переполнения для каждого счетчика
+    Counter  : ARRAY[1..N] OF INT;  // Текущее значение счетчика для каждого счетчика
+END_VAR
+
+VAR
+    PrevPulse : ARRAY[1..N] OF BOOL; // Предыдущее состояние импульса
+    Counting  : BOOL;   // Флаг режима счета
+END_VAR
+
+BEGIN
+    // Обработка сигнала Start/Stop
+    IF Start THEN
+        Counting := TRUE;
+    ELSIF Stop THEN
+        Counting := FALSE;
+    END_IF;
+
+    // Обработка сигнала Reset
+    IF Reset THEN
+        FOR i := 1 TO N DO
+            Counter[i] := Min[i];
+            Overflow[i] := FALSE;
+        END_FOR;
+    END_IF;
+
+    // Основная логика подсчета
+    IF Counting THEN
+        FOR i := 1 TO N DO
+            // Обработка заднего фронта импульса
+            IF Pulse[i] AND NOT PrevPulse[i] THEN
+                Counter[i] := Counter[i] + 1;
+                
+                // Проверка на переполнение
+                IF Counter[i] >= Max[i] THEN
+                    Counter[i] := Min[i];    // Сброс на минимальное значение
+                    Overflow[i] := TRUE;     // Сигнал переполнения
+                ELSE
+                    Overflow[i] := FALSE;    // Переполнения нет
+                END_IF;
+            END_IF;
+            PrevPulse[i] := Pulse[i]; // Обновляем предыдущее состояние импульса
+        END_FOR;
+    END_IF;
+END_FUNCTION
